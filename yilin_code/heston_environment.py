@@ -19,10 +19,11 @@ class Environment(Reinforcement, nn.Module):
 
         state_dim = 4 #change this when incorporating more features
         act_dim = 1
+        input_dim = state_dim
 
         self.entrpy_scaler = entrpy_scaler
 
-        super(Environment, self).__init__(state_dim, act_dim, eps=eps, lr=lr, dr=dr, gamma=gamma, lam=lam)
+        super(Environment, self).__init__(input_dim, state_dim, act_dim, eps=eps, lr=lr, dr=dr, gamma=gamma, lam=lam)
 
         # draw from a joint distribution in the future
         self.r = 0.007                                           # drift

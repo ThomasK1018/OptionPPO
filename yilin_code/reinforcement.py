@@ -10,12 +10,14 @@ import torch.nn.functional as F  #PS: this may be advanced concept, explain or f
 import torch.distributions as D
 from torch import optim  #PS: what is the optimization algorithm in pytorch?  Any description needed?
 import matplotlib.pyplot as plt
-from policy_network import PolicyNet
-from baseline_network import BaselineNet
+#from policy_network_mlp import PolicyNet
+#from baseline_network_mlp import BaselineNet
+from policy_network_transformer import PolicyNet
+from baseline_network_transformer import BaselineNet
 import copy
 
 class Reinforcement(nn.Module):
-    def __init__(self, state_dim, act_dim, eps=0.2, lr=0.0001, dr=0.2, gamma=0.99, lam=0.95, bufsize=4096, rollsize=256, model_dir="./model"):
+    def __init__(self, input_dim, state_dim, act_dim, eps=0.2, lr=0.0001, dr=0.2, gamma=0.99, lam=0.95, bufsize=4096, rollsize=256, model_dir="./model"):
         super(Reinforcement, self).__init__()
 
         self.eps = eps
@@ -32,8 +34,12 @@ class Reinforcement(nn.Module):
         self.buffersize = bufsize
         self.rollsize = rollsize
 
-        self.policy = PolicyNet(state_dim, act_dim, lr, dr, model_dir=model_dir, name="Policy").double() #change precision here
-        self.baseline = BaselineNet(state_dim, lr, dr, model_dir=model_dir, name="Baseline").double()
+        #self.policy = PolicyNet(state_dim, act_dim, lr, dr, model_dir=model_dir, name="Policy").double() #change precision here
+        #self.baseline = BaselineNet(state_dim, lr, dr, model_dir=model_dir, name="Baseline").double()
+        self.baseline = BaselineNet(input_dim = input_dim, state_dim = self.state_dim, lr = lr, dr = dr, model_dir=model_dir, name="Baseline").double()
+        self.policy = PolicyNet(input_dim = input_dim, state_dim = self.state_dim, output_dim = act_dim)
+
+
 
         self.mse = nn.MSELoss() # initialize once to train baseline
 
@@ -193,7 +199,7 @@ class Reinforcement(nn.Module):
             # self.baseline.eval()
             # val = self.baseline(batch["state"])
             # batch['value'] = val.detach()
-
+            #print(self.replaybuffer)
             loss = self.objective(self.replaybuffer)
             self.policy.optimizer.zero_grad()
             loss.mean().backward()
@@ -247,7 +253,7 @@ class Reinforcement(nn.Module):
 
         return loss.mean().item(), score
 
-    def train(self, epochs=100, train_iterations=8, val_batchs=512, save_epochs=10, verbose=2):
+    def train(self, epochs = 100, train_iterations=8, val_batchs=512, save_epochs=10, verbose=2):
         
         for i in range(epochs):
             self.optimize(self.rollsize, train_iterations)
@@ -308,3 +314,13 @@ class Reinforcement(nn.Module):
             self.policy.load(suffix=suffix)
             self.baseline.load(suffix=suffix)
         return op, ob
+    
+    
+#state_dim = 20
+#input = T.tensor([1, 3, 5], dtype = T.float32)
+#input_dim = len(input)
+#output_dim = 6
+#num_heads = 2
+#model = Reinforcement(input_dim = input_dim, state_dim = state_dim, act_dim = output_dim)
+
+#print(model(input))
